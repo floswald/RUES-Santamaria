@@ -1,0 +1,204 @@
+---
+title: "Discussing 'Reshaping Infrastructure: Evidence from the Division of Germany' by [Marta Santamaria](https://sites.google.com/site/msantamariaupf/home)"
+format: 
+    revealjs:
+        theme: _extensions/grantmcdermott/clean/clean.scss
+        logo: img/ScPo-logo.png
+        footer: "[RUES workshop March 2024](https://floswald.github.io/Santamaria-RUES/)"
+        incremental: false
+        code-line-numbers: false
+        highlight-style: github
+        slide-number: false
+        html-math-method: mathjax
+author: 
+  - name: Florian Oswald
+    orcid: 0000-0001-7737-2038
+    email: florian.oswald@sciencespo.fr
+    affiliations: SciencesPo Paris
+subtitle: "Regional and Urban Economics Workshop @ PSE"
+date: today
+date-format: "D MMMM, YYYY"
+bibliography: refs.bib
+
+---
+
+
+## Overview
+
+* Impressive QSM model with an endogenous investment decision.
+* Interesting historical setting: Helpful to think about path dependency of large infrastructure projects.
+* Paper seems fairly matured by now, under revision at a prestigious journal...so, not many comments left to make?
+
+. . .
+
+👍
+
+. . .
+
+* Will try with a few clarifying questions.
+* Some comments about computation. 
+
+# Questions {background-color="#40666e"}
+
+## Questions
+
+### What is `Reshaping`?
+
+::: {.columns}
+::: {.column width=75%}
+![](img/figure2.png)
+::: 
+
+::: {.column width=25%}
+::: {.fragment}
+* "Very Similar"
+:::
+
+::: {.fragment}
+* But: "Important differences"
+:::
+
+::: {.fragment}
+* 👈 _allocation to different district_?
+:::
+
+::: {.fragment}
+* 1463 Edges?
+:::
+
+::: 
+::: 
+
+
+
+## Questions
+
+### What is `Reshaping`?
+
+Some help with Table 1 please: 
+
+::: {style="font-size: 80%;"}
+>This decomposition shows that the highway network in 1974 was considerably reshaped from what had been set out in the plan designed 40 years earlier.
+:::
+
+::: {.columns}
+::: {.column width=50%}
+![](img/table1.png)
+::: 
+
+::: {.column width=50%}
+* Talking only about West, right?
+* Map (even only part) would be super helpful
+* Appendix C was not enough. Are there more higways than in figure 1?
+
+::: 
+::: 
+
+
+## Questions
+
+### How does Path Dependence counterfactual work?
+
+::: {style="font-size: 80%;"}
+> I solve for the unconstrained infrastructure allocation in West Germany by assuming that no highway had been built before division
+
+:::
+
+* Why is assuming that no highway had been built in West Germany the right thing to do here?
+* I understand the infrastructure part (compare _wrongly built_ network with optimal one).
+* But are you not kind of ignoring the population distribution? Some cities may exist only _because_ they got the _wrong_ highways in the first place.
+* I may not properly understand how the dynamics play out here. How does one transition from 1949 to 1974?
+
+
+
+## Questions
+
+### What is Investment into Highways actually?
+
+Once a highway is built, the main cost has been incured? What *exactly* is highway investment?
+
+::: {.incremental}
+* Maintainance?
+* Adding a lane?
+* Renewing surface?
+* Some background would be helpful. Like, how *important* is $\phi_{i,j}$ once the highway exists?
+:::
+
+
+
+# Computation {background-color="#40666e"}
+
+
+## Computation
+
+### This is a hard problem
+
+$$
+\begin{align}
+\max_{\phi_n} & \left[ \sum_n \left(\frac{v_n}{P_n^\alpha r_n^{1-\alpha}}\right)^\epsilon \right]^{1/\epsilon} \\
+s.t. \quad & (10)-(13) \quad \text{(SE)}\\
+           & (17) \quad \text{(TC)} \\
+           & (18) \quad \text{(BC)}
+\end{align}
+$$
+
+::: {.fragment}
+
+simplified into 👉
+$\max_{\phi_n} U^{eq} = f(w^{eq}(\phi),P^{eq}(\phi),r^{eq}(\phi),L^{eq}(\phi),T^{eq}(\phi),\phi)\quad (21)$
+
+* (21) not clear. What is $f$? no constraints? $w^{eq}(\phi)$ fixed at step $k$?
+* Seems a nested fixed point strategy.
+:::
+
+## Computation
+
+### Suggestions (👋 hand-waving alert)
+
+* _No Analytic Gradients_
+* Use a language with good AD support. `julia + JuMP.jl + IPopt.jl`
+* @judd-su
+* [JuMP.jl](https://jump.dev/) @Lubin2023
+* You would solve the full constrained problem on previous slide, no iteration. 
+* I.e. you choose $\{\phi_n,w_n,P_n,r_n,L_n\}$ at the same time.
+* You could combine steps 1 and 3 of your algorithm. Maybe even step 2 as well (not sure about complexity of this)
+
+
+## Computation
+
+### Suggestions 👋
+
+
+```julia
+# not tested. (of course.)
+using JuMP, Ipopt
+function MartaSteps1and3(T::Matrix)
+    N = size(T,1)  # T is the current transport costs matrix
+    m = Model(Ipopt.Optimizer)
+    @variable(m, 1 <= ϕ[1:N])
+    @variable(m, 0 <= w[1:N])
+    . . . # define all choice variables
+    @constraint(m, eq10[n=1:N], 
+        sum( (L[i] / (σ*F) (σ/(σ-1)) w[i]/A[i] * T[n,i]) * P[i]^(σ-1) * w[i] * L[i]     
+    for i in 1:N)
+    . . . # define all constraints (10-13)
+    @expression(m, v[i=1:N], . . . ) # define
+    @objective(m, sum( (v[n] / (P[n]^α * r[n]^(1-α)))^ϵ for n in 1:N)^(1/ϵ))
+
+    optimize!(m)  
+    # build's AD gradient+hessian+sparsity structure
+    # and hands over to Ipopt
+end
+```
+
+# End 👋 
+
+
+😉
+
+
+
+## References
+
+::: {#refs}
+:::
