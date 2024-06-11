@@ -1,4 +1,4 @@
 # ScPo PhD Breakfast
 
 * 2024 edition
-* uses https://github.com/grantmcdermott/quarto-revealjs-clean
+* uses https://github.com/grantmcdermott/quarto-revealjs-clean# Bruneel-Magnac
